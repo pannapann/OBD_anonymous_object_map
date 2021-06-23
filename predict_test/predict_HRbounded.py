@@ -253,7 +253,7 @@ if __name__ == '__main__':
             contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             contours, _ = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 			
-			# Draw Contours and put depth
+			# Draw Contours and put depth on the image
             for c in contours:
                 rect = cv2.boundingRect(c)
                 if rect[2]*rect[3] < 1000 or rect[2]*rect[3] > 0.5*1280*300 : continue
