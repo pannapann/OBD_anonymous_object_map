@@ -257,11 +257,9 @@ if __name__ == '__main__':
     model_name=args.footprint_model,
     use_cuda=torch.cuda.is_available() and not args.no_cuda,
     save_visualisations=not args.no_save_vis)
-    #save_dir=args.save_dir)
     cap = cv2.VideoCapture(args.video)
     frame_width = int(cap.get(3))
     frame_height = int(cap.get(4))
-    #out = cv2.VideoWriter('outpy.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 10, (frame_width,frame_height-300))
     first = True
     while(cap.isOpened()):
         ret, frame = cap.read()
@@ -272,18 +270,9 @@ if __name__ == '__main__':
             hidden_ground,depth_colourmap = inference_manager.predict_hidden_depth(frame)
             depth_image,depth_array = test_simple(args,frame)
             depth_array = depth_array[240:540:]
-            #background_image,_ = inference_manager._load_and_preprocess_image( depth_array)
-            #depth_array = cv2.cvtColor(depth_array, cv2.COLOR_RGB2BGR)
             ground_color = 0.2*depth_colourmap * hidden_ground
             frame = depth_image*(1 - hidden_ground) + (ground_color[:,:,] * 255).astype(np.uint8)
             frame = cropped_frame(frame)
-            
-            '''frame = opencv2skimage(frame)
-            gray_painting = rgb2gray(frame)
-            binarized = gray_painting>0.3
-            label_image = label(binarized)
-            frame = label2rgb(label_image, image=binarized, bg_label=0,colors=["white"])
-            frame =skimage2opencv(frame)'''
             colorr = frame.astype(np.uint8)
             im = frame.astype(np.uint8)
             imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -294,32 +283,18 @@ if __name__ == '__main__':
             im = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
             for c in contours:
                 rect = cv2.boundingRect(c)
-                #rect[2] < 100 or rect[3] < 100
                 if rect[2]*rect[3] < 2500 or rect[2]*rect[3] > 0.2*1280*300 : continue
                 print(cv2.contourArea(c))
                 x,y,w,h = rect
                 cv2.rectangle(original_frame,(x,y),(x+w,y+h),(0,255,0),2)
-                #print(x)
-                #print(y)
-                #print(w)
-                #print(h)
-                #print(depth_array)
                 aaa = depth_array.min()
                 cv2.putText(original_frame,"Object Detected range = {aa:.2f}".format(aa=aaa),(x+w+10,y+h),0,0.3,(0,255,0))
                 if first:
                     out = cv2.VideoWriter('outpy8.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 20, (frame.shape[1],frame.shape[0]),1)
                     first=False
                 out.write(original_frame)
-            
-            
-            #frame = (ground_color[:,:,] * 255).astype(np.uint8)
             cv2.imshow("Show",original_frame)
-            #cv2.imshow("BW",im)
             cv2.imshow("Color",colorr)
-            #print(depth_array[240:540:].shape)
-            #print(depth_array.shape)
-            #print(frame.shape[0])
-            #print(frame.shape[1])
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
         else:
