@@ -25,11 +25,6 @@ import monodepth2.networks as networks
 from monodepth2.layers import disp_to_depth
 from monodepth2.utils import download_model_if_doesnt_exist
 from monodepth2.evaluate_depth import STEREO_SCALE_FACTOR
-from skimage.io import imread, imshow
-from skimage.color import rgb2gray
-from skimage.morphology import (erosion, dilation, closing, opening,area_closing, area_opening)
-from skimage.measure import label, regionprops, regionprops_table
-from skimage.color import label2rgb
 
 MODEL_HEIGHT_WIDTH = {
     "kitti": (192, 640),
