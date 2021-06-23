@@ -179,7 +179,7 @@ def test_simple(args,frame):
     depth_decoder.eval()
 		#AI Start
     with torch.no_grad():
-						#preprocess
+            #preprocess
             input_image, original_width, original_height = preprocess(frame,feed_width, feed_height)
 
             # PREDICTION
@@ -218,11 +218,11 @@ def cropped_frame(input):
 if __name__ == '__main__':
     args = parse_args()
     inference_manager = InferenceManager(
-    									model_name=args.footprint_model,
-    									use_cuda=torch.cuda.is_available() and not args.no_cuda,
-    									save_visualisations=not args.no_save_vis)
+    					model_name=args.footprint_model,
+    					use_cuda=torch.cuda.is_available() and not args.no_cuda,
+    					save_visualisations=not args.no_save_vis)
     
-	cap = cv2.VideoCapture(args.video)
+    cap = cv2.VideoCapture(args.video)
     frame_width = int(cap.get(3))
     frame_height = int(cap.get(4))
     first = True
@@ -233,27 +233,27 @@ if __name__ == '__main__':
         if ret == True:
             original_frame = cropped_frame(frame)
 			
-			#Predict depth and traversable Path
+            #Predict depth and traversable Path
             hidden_ground,depth_colourmap = inference_manager.predict_hidden_depth(frame)
             depth_image,depth_array = test_simple(args,frame)
 			
-			#Apply Hidden ground to predicted frame
+            #Apply Hidden ground to predicted frame
             depth_array = depth_array[240:540:]
             ground_color = 0*depth_colourmap * hidden_ground
             frame = depth_image*(1 - hidden_ground) + (ground_color[:,:,] * 255).astype(np.uint8)
             
-			#Cropped and convert to grayscale
-			frame = cropped_frame(frame)
+            #Cropped and convert to grayscale
+            frame = cropped_frame(frame)
             im = frame.astype(np.uint8)
             imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
 			
-			#Detect contour of the image
+            #Detect contour of the image
             ret, thresh = cv2.threshold(imgray, 127, 255, 0)
             #ret, thresh = cv2.threshold(imgray, 127, 255, 0)
             contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             contours, _ = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 			
-			# Draw Contours and put depth on the image
+            # Draw Contours and put depth on the image
             for c in contours:
                 rect = cv2.boundingRect(c)
                 if rect[2]*rect[3] < 1000 or rect[2]*rect[3] > 0.5*1280*300 : continue
@@ -262,14 +262,14 @@ if __name__ == '__main__':
                 cv2.rectangle(original_frame,(x,y),(x+w,y+h),(0,255,0),2)
                 object_range = depth_array.min()
                 cv2.putText(original_frame,"Object Detected range = {range:.2f}".format(range=object_range),(x+w+10,y+h),0,0.3,(0,255,0))
-				
-				#Start video writer
+
+                #Start video writer
                 if first:
                     out = cv2.VideoWriter('output.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 20, (frame.shape[1],frame.shape[0]),1)
                     first=False
                 out.write(original_frame)
 			
-			#Show output via opencv
+            #Show output via opencv
             cv2.imshow("Show",original_frame)
             cv2.imshow("Colorized",im)
 			
