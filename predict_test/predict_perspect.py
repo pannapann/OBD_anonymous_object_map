@@ -30,6 +30,7 @@ from skimage.color import rgb2gray
 from skimage.morphology import (erosion, dilation, closing, opening,area_closing, area_opening)
 from skimage.measure import label, regionprops, regionprops_table
 from skimage.color import label2rgb
+from skimage import transform
 
 MODEL_HEIGHT_WIDTH = {
     "kitti": (192, 640),

@@ -1,9 +1,5 @@
-# Copyright Niantic 2019. Patent Pending. All rights reserved.
-# python predict_perspect.py --video monodepth2/gggg.avi --monodepth2_model_name mono+stereo_640x192 --pred_metric_depth
-# This software is licensed under the terms of the Monodepth2 licence
-# which allows for non-commercial use only, the full terms of which are made
-# available in the LICENSE file.
-
+# Author: Pannapann, Goddy, Neptd, WinnamonRoll
+# python predict_HRbounded.py --video footprints/monodepth2/gggg3.avi --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
 from __future__ import absolute_import, division, print_function
 import cv2
 from PIL import Image
@@ -20,17 +16,13 @@ from footprints.model_manager import ModelManager
 from footprints.utils import sigmoid_to_depth, download_model_if_doesnt_exist, pil_loader, MODEL_DIR
 from footprints.utils import download_model_if_doesnt_exist as f_model_load
 import torch
+import torchvision
 from torchvision import transforms, datasets
 import monodepth2.networks as networks
 from monodepth2.layers import disp_to_depth
 from monodepth2.utils import download_model_if_doesnt_exist
 from monodepth2.evaluate_depth import STEREO_SCALE_FACTOR
-from skimage.io import imread, imshow
-from skimage.color import rgb2gray
-from skimage.morphology import (erosion, dilation, closing, opening,area_closing, area_opening)
-from skimage.measure import label, regionprops, regionprops_table
-from skimage.color import label2rgb
-from skimage import transform
+
 MODEL_HEIGHT_WIDTH = {
     "kitti": (192, 640),
     "matterport": (512, 640),
@@ -53,11 +45,6 @@ class InferenceManager:
                                          interpolation=Image.ANTIALIAS)
         self.totensor = transforms.ToTensor()
 
-        #self.save_dir = save_dir
-        #os.makedirs(os.path.join(save_dir,  "outputs"), exist_ok=True)
-        #self.save_visualisations = save_visualisations
-        #if save_visualisations:
-            #os.makedirs(os.path.join(save_dir,  "visualisations"), exist_ok=True)
 
     def _load_and_preprocess_image(self, frame):
         """Load an image, resize it, convert to torch and if needed put on GPU
@@ -89,7 +76,7 @@ class InferenceManager:
         hidden_depth = (hidden_depth - _min) / (_max - _min)
         depth_colourmap = self.colormap(hidden_depth)[:, :, :3]  # ignore alpha channel
 
-            # create and save visualisation image
+        # create hidden ground and save visualisation image
         hidden_ground = hidden_ground[:, :, None]
         # visualisation = original_image * (1 - hidden_ground) + depth_colourmap * hidden_ground
         return hidden_ground,depth_colourmap #,(visualisation[:, :, ::-1] * 255).astype(np.uint8),
@@ -146,20 +133,10 @@ def preprocess(frame,feed_width, feed_height):
     input_image = input_image.resize((feed_width, feed_height), pil.LANCZOS)
     output_image = transforms.ToTensor()(input_image).unsqueeze(0)
     return output_image,original_width, original_height
-'''
-def save_colormap_depthimage():
-              # Saving colormapped depth image
-  	disp_resized_np = disp_resized.squeeze().cpu().numpy()
-  	vmax = np.percentile(disp_resized_np, 95)
-    normalizer = mpl.colors.Normalize(vmin=disp_resized_np.min(), vmax=vmax)
-    mapper = cm.ScalarMappable(norm=normalizer, cmap='magma')
-    colormapped_im = (mapper.to_rgba(disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
-    im = pil.fromarray(colormapped_im)
-'''
 
 
 def test_simple(args,frame):
-    """Function to predict for a single image or folder of images
+    """Function to predict depth from frame with given model
     """
     assert args.monodepth2_model_name is not None, \
         "You must specify the --model_name parameter; see README.md for an example"
@@ -188,7 +165,7 @@ def test_simple(args,frame):
     feed_height = loaded_dict_enc['height']
     feed_width = loaded_dict_enc['width']
     filtered_dict_enc = {k: v for k, v in loaded_dict_enc.items() if k in encoder.state_dict()}
-    encoder.load_state_dict(filtered_dict_enc)
+    encoder.load_state_dict(filtered_dict_enc,strict=False)
     encoder.to(device)
     encoder.eval()
 
@@ -203,7 +180,7 @@ def test_simple(args,frame):
     depth_decoder.eval()
 		#AI Start
     with torch.no_grad():
-						#preprocess
+            #preprocess
             input_image, original_width, original_height = preprocess(frame,feed_width, feed_height)
 
             # PREDICTION
@@ -218,6 +195,7 @@ def test_simple(args,frame):
             # Calculating metric depth
             scaled_disp, depth = disp_to_depth(disp, 0.1, 100)
             metric_depth = STEREO_SCALE_FACTOR * depth.cpu().numpy()
+            origin_metric_depth = metric_depth
 
             # Saving colormapped depth image
             disp_resized_np = disp_resized.squeeze().cpu().numpy()
@@ -227,105 +205,87 @@ def test_simple(args,frame):
             colormapped_im = (mapper.to_rgba(disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
             im = pil.fromarray(colormapped_im)
             opencvImage = cv2.cvtColor(np.array(im), cv2.COLOR_RGB2BGR)
-            return opencvImage
+            __,new_depth = disp_to_depth(disp_resized_np, 0.1, 100)
+            metric_depth = STEREO_SCALE_FACTOR * new_depth
+            return opencvImage,metric_depth,origin_metric_depth
+
 
 
 def cropped_frame(input):
     w = -300
     crop_frame = input[w:,:]
     return crop_frame
-
-def skimage2opencv(src):
-    src *= 255
-    src = src.astype(int)
-    cv2.cvtColor(src.astype(np.uint8),cv2.COLOR_RGB2BGRA)
-    return src
-
-def opencv2skimage(src):
-    cv2.cvtColor(src.astype(np.uint8),cv2.COLOR_BGRA2RGB)
-    src = src.astype(np.float32)
-    src /= 255
-    return src
             
             
 if __name__ == '__main__':
     args = parse_args()
     inference_manager = InferenceManager(
-    model_name=args.footprint_model,
-    use_cuda=torch.cuda.is_available() and not args.no_cuda,
-    save_visualisations=not args.no_save_vis)
-    #save_dir=args.save_dir)
+    					model_name=args.footprint_model,
+    					use_cuda=torch.cuda.is_available() and not args.no_cuda,
+    					save_visualisations=not args.no_save_vis)
+    
     cap = cv2.VideoCapture(args.video)
-
     frame_width = int(cap.get(3))
     frame_height = int(cap.get(4))
-    #out = cv2.VideoWriter('outpy.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 10, (frame_width,frame_height-300))
     first = True
+	
     while(cap.isOpened()):
         ret, frame = cap.read()
+        
         if ret == True:
+            original_frame = cropped_frame(frame)
+			
+            #Predict depth and traversable Path
             hidden_ground,depth_colourmap = inference_manager.predict_hidden_depth(frame)
-            depth_array = test_simple(args,frame)
-            #background_image,_ = inference_manager._load_and_preprocess_image( depth_array)
-            #depth_array = cv2.cvtColor(depth_array, cv2.COLOR_RGB2BGR)
-            ground_color = 0.2*depth_colourmap * hidden_ground
-            frame = depth_array*(1 - hidden_ground) + (ground_color[:,:,] * 255).astype(np.uint8)
+            depth_image,depth_array,original_metric_depth = test_simple(args,frame)
+            test = torchvision.transforms.ToTensor()(depth_array).unsqueeze(0).cpu().numpy()
+            np.save("depthNumpy",test)
+			
+            #Apply Hidden ground to predicted frame
+            depth_array = depth_array[240:540:]
+            ground_color = 0*depth_colourmap * hidden_ground
+            frame = depth_image*(1 - hidden_ground) + (ground_color[:,:,] * 255).astype(np.uint8)
             
+            #Cropped and convert to grayscale
             frame = cropped_frame(frame)
-            original_frame = frame
-            img = frame.astype(np.uint8)
-            im = img
+            im = frame.astype(np.uint8)
             imgray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+			
+            #Detect contour of the image
             ret, thresh = cv2.threshold(imgray, 127, 255, 0)
             #ret, thresh = cv2.threshold(imgray, 127, 255, 0)
             contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             contours, _ = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-            im = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
+			
+            # Draw Contours and put depth on the image
             for c in contours:
                 rect = cv2.boundingRect(c)
-                #rect[2] < 100 or rect[3] < 100
-                if rect[2]*rect[3] < 2500 or rect[2]*rect[3] > 0.2*1280*300 : continue
+                if rect[2]*rect[3] < 1000 or rect[2]*rect[3] > 0.5*1280*300 : continue
                 print(cv2.contourArea(c))
                 x,y,w,h = rect
                 cv2.rectangle(original_frame,(x,y),(x+w,y+h),(0,255,0),2)
-                #print(x)
-                #print(y)
-                #print(w)
-                #print(h)
-                #print(depth_array)
-                aaa = depth_array.min()
-                cv2.putText(original_frame,"Object Detected range = {aa:.2f}".format(aa=aaa),(x+w+10,y+h),0,0.3,(0,255,0))
-            cv2.circle(im, (380, 115), 5, (0, 0, 255), -1)
-            cv2.circle(im, (555+400, 115), 5, (0, 0, 255), -1)
-            cv2.circle(im, (910+275, 295), 5, (0, 0, 255), -1)
-            cv2.circle(im, (46+50, 295), 5, (0, 0, 255), -1)
-            pts1 = np.float32([[380, 115], [555+400, 115],[46+50, 295],[910+275, 295]])
-            pts2 = np.float32([[46+50, 115], [910+275, 115],[46+50, 295],[910+275, 295]])
-            matrix = cv2.getPerspectiveTransform(pts1, pts2)
-            result = cv2.warpPerspective(im, matrix, (im.shape[1], im.shape[0]))
-            if first:
-                out = cv2.VideoWriter('outperspect2.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 20, (im.shape[1], im.shape[0]),1)
-                first=False
-            out.write(result)
-            cv2.imshow("Image", im)
-            cv2.imshow("Perspective transformation", result)
-           
-            '''frame = opencv2skimage(frame)
-            gray_painting = rgb2gray(frame)
-            binarized = gray_painting>0.3
-            label_image = label(binarized)
-            frame = label2rgb(label_image, image=binarized, bg_label=0,colors=["white"])
-            frame =skimage2opencv(frame)'''
-            
-            #frame = (ground_color[:,:,] * 255).astype(np.uint8)
-            #cv2.imshow('frame',frame.astype(np.uint8))
-            #print(frame.shape[0])
-            #print(frame.shape[1])
+                object_range = depth_array.min()
+                cv2.putText(original_frame,"Object Detected range = {range:.2f}".format(range=object_range),(x+w+10,y+h),0,0.3,(0,255,0))
+
+                #Start video writer
+                if first:
+                    out = cv2.VideoWriter('output.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 20, (frame.shape[1],frame.shape[0]),1)
+                    first=False
+                out.write(original_frame)
+			
+            #Show output via opencv
+            cv2.imshow("Show",original_frame)
+            cv2.imshow("Colorized",im)
+			
             if cv2.waitKey(25) & 0xFF == ord('q'):
+                print(depth_array.shape)
+                print(test.shape)
                 break
         else:
             break
+
 cap.release()
 out.release()
 
 cv2.destroyAllWindows()      
+ 
