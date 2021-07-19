@@ -1,6 +1,5 @@
 # Author: Pannapann, Goddy, Neptd, WinnamonRoll
 # python predict_HRbounded_pointcloud.py --video footprints/monodepth2/gggg3.avi --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
-#%%
 from __future__ import absolute_import, division, print_function
 import cv2
 from PIL import Image
