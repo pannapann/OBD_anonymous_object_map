@@ -238,6 +238,7 @@ if __name__ == '__main__':
             # )
             # fig=go.Figure(data=marker_data)
             # fig.show()
+
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
         else:
