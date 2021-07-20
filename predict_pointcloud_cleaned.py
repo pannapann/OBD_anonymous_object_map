@@ -225,7 +225,7 @@ if __name__ == '__main__':
             print("Painting points")
             pd_points = pd.DataFrame(paint_points(points,colors), columns=['x','y','z','red','green','blue'])
             cloud = PyntCloud(pd_points)
-            cloud.plot(initial_point_size=0.000002, backend="matplotlib")
+            cloud.plot(initial_point_size=0.000002, backend="pyvista")
             # print("plotting")
             # marker_data = go.Scatter3d(
             #     x=pd_points['x'].to_numpy(),
