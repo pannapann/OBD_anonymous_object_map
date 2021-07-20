@@ -5,11 +5,8 @@ import cv2
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-import sys
-import glob
 import argparse
 import numpy as np
-import PIL.Image as pil
 import matplotlib as mpl
 import matplotlib.cm as cm
 from footprints.model_manager import ModelManager
@@ -21,18 +18,11 @@ from torchvision import transforms, datasets
 import monodepth2.networks as networks
 from monodepth2.layers import disp_to_depth
 from monodepth2.utils import download_model_if_doesnt_exist
-from monodepth2.evaluate_depth import STEREO_SCALE_FACTOR
-import argparse
-import os
-import numpy as np
-import scipy.misc as ssc
 import kitti_util
 from pyntcloud import *
 import pandas as pd
-import os
-import numpy as np
-import PIL.Image as Image
 
+STEREO_SCALE_FACTOR = 5.4
 
 MODEL_HEIGHT_WIDTH = {
     "kitti": (192, 640),
@@ -143,7 +133,7 @@ def preprocess(frame,feed_width, feed_height):
     img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     input_image = Image.fromarray(img)
     original_width, original_height = input_image.size
-    input_image = input_image.resize((feed_width, feed_height), pil.LANCZOS)
+    input_image = input_image.resize((feed_width, feed_height), Image.LANCZOS)
     output_image = transforms.ToTensor()(input_image).unsqueeze(0)
     return output_image,original_width, original_height
 
@@ -280,7 +270,7 @@ def test_simple(args,frame):
             normalizer = mpl.colors.Normalize(vmin=disp_resized_np.min(), vmax=vmax)
             mapper = cm.ScalarMappable(norm=normalizer, cmap='plasma')
             colormapped_im = (mapper.to_rgba(disp_resized_np)[:, :, :3] * 255).astype(np.uint8)
-            im = pil.fromarray(colormapped_im)
+            im = Image.fromarray(colormapped_im)
             opencvImage = cv2.cvtColor(np.array(im), cv2.COLOR_RGB2BGR)
             __,new_depth = disp_to_depth(disp_resized_np, 0.1, 100)
             metric_depth = STEREO_SCALE_FACTOR * new_depth

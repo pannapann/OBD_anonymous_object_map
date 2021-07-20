@@ -1,66 +1,29 @@
 # Author: Pannapann, Goddy, Neptd, WinnamonRoll
-# python predict_HRbounded_pointcloud.py --video footprints/monodepth2/gggg3.avi --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
+# python predict_pointcloud_cleaned.py --video footprints/monodepth2/gggg3.avi --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
 from __future__ import absolute_import, division, print_function
 import cv2
 from PIL import Image
-import matplotlib.pyplot as plt
 import os
 import argparse
 import numpy as np
-import matplotlib as mpl
-import matplotlib.cm as cm
-from footprints.model_manager import ModelManager
-from footprints.utils import sigmoid_to_depth, download_model_if_doesnt_exist, pil_loader, MODEL_DIR
-from footprints.utils import download_model_if_doesnt_exist as f_model_load
 import torch
 import torchvision
-from torchvision import transforms, datasets
+from torchvision import transforms
 import monodepth2.networks as networks
 from monodepth2.layers import disp_to_depth
 from monodepth2.utils import download_model_if_doesnt_exist
-from monodepth2.evaluate_depth import STEREO_SCALE_FACTOR
 import kitti_util
 from pyntcloud import *
 import pandas as pd
 
 
+STEREO_SCALE_FACTOR = 5.4
 
 MODEL_HEIGHT_WIDTH = {
     "kitti": (192, 640),
     "matterport": (512, 640),
     "handheld": (256, 448),
 }
-
-class InferenceManager:
-
-    def __init__(self, model_name, use_cuda, save_visualisations=True):
-
-        f_model_load(model_name)
-        model_load_folder = os.path.join(MODEL_DIR, model_name)
-        self.model_manager = ModelManager(is_inference=True, use_cuda=use_cuda)
-        self.model_manager.load_model(weights_path=model_load_folder)
-        self.model_manager.model.eval()
-
-        self.use_cuda = use_cuda
-        self.colormap = plt.get_cmap('plasma', 256)  # for plotting
-        self.resizer = transforms.Resize(MODEL_HEIGHT_WIDTH[model_name],
-                                         interpolation=Image.ANTIALIAS)
-        self.totensor = transforms.ToTensor()
-
-
-    def _load_and_preprocess_image(self, frame):
-        """Load an image, resize it, convert to torch and if needed put on GPU
-        """
-        img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        original_image = Image.fromarray(img)
-        preprocessed_image = self.resizer(original_image)
-        preprocessed_image = self.totensor(preprocessed_image)
-        preprocessed_image = preprocessed_image[None, ...]
-        if self.use_cuda:
-            preprocessed_image = preprocessed_image.cuda()
-        return original_image, preprocessed_image
-
-
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Complicate function to run monodepth+footprints on video.')
@@ -105,9 +68,8 @@ def parse_args():
                         default=r"./footprints/calib")
     return parser.parse_args()
 
-
+#preprocess intitial photo to fit the torch tensor 
 def preprocess(frame,feed_width, feed_height):
-    #input_image = pil.open(image_path).convert('RGB')
     img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     input_image = Image.fromarray(img)
     original_width, original_height = input_image.size
@@ -115,31 +77,36 @@ def preprocess(frame,feed_width, feed_height):
     output_image = transforms.ToTensor()(input_image).unsqueeze(0)
     return output_image,original_width, original_height
 
-def project_disp_to_points(calib, disp, max_high):
+#project display point(depth array) to cloud point
+def project_disp_to_points(calib, disp, max_high,frame):
     disp[disp < 0] = 0
     baseline = 0.54
     mask = disp > 0
     depth =disp
-    #depth = calib.f_u * baseline / (disp + 1. - mask)
     depth = depth[0][0]
     rows, cols = depth.shape
     c, r = np.meshgrid(np.arange(cols), np.arange(rows))
     points = np.stack([c, r, depth])
+    blue = frame[:,:,0].reshape(-1)
+    print(blue.shape)
+    green = frame[:,:,1].reshape(-1)
+    print(green.shape)
+    red = frame[:,:,2].reshape(-1)
+    print(red.shape)
+    rgb = np.stack([red,green,blue])
+    rgb = np.swapaxes(rgb,0,1)
+    print(rgb.shape)
+    #rgb = rgb.reshape((-1,3))
     points = points.reshape((3, -1))
+    print(points.shape)
     points = points.T
     points = points[mask.reshape(-1)]
     cloud = calib.project_image_to_velo(points)
+    cloud.shape
     valid = (cloud[:, 0] >= 0) & (cloud[:, 2] < max_high)
-    return cloud[valid]
-
-def load_velo_scan(velo_filename):
-    scan = np.fromfile(velo_filename, dtype=np.float32)
-    scan = scan.reshape((-1, 4))
-    return scan
-
-def paint_points(points, color=[192,0,0]):
-    # color = [r, g, b]
-    color = np.array([color])
+    return cloud[valid], rgb[valid]
+#paint the point
+def paint_points(points, color):
     new_pts = np.zeros([points.shape[0],6])
     new_pts[:,:3] = points
     new_pts[:, 3:] = new_pts[:, 3:] + color
@@ -234,11 +201,6 @@ def test_simple(args,frame):
             
 if __name__ == '__main__':
     args = parse_args()
-    inference_manager = InferenceManager(
-    					model_name=args.footprint_model,
-    					use_cuda=torch.cuda.is_available() and not args.no_cuda,
-    					save_visualisations=not args.no_save_vis)
-    
     cap = cv2.VideoCapture(args.video)
     frame_width = int(cap.get(3))
     frame_height = int(cap.get(4))
@@ -253,24 +215,23 @@ if __name__ == '__main__':
             depth_array = test_simple(args,frame)
             disp_map = torchvision.transforms.ToTensor()(depth_array).unsqueeze(0).cpu().numpy()
             disp_map = (disp_map*256).astype(np.uint16)/256.
-            lidar = project_disp_to_points(calib, disp_map, 1)
+            lidar,colors = project_disp_to_points(calib, disp_map, 10, frame)
             # pad 1 in the indensity dimension
             lidar = np.concatenate([lidar, np.ones((lidar.shape[0], 1))], 1)
             lidar = lidar.astype(np.float32)
             #lidar.tofile('{}/{}.bin'.format(args.save_dir, predix))
             points = lidar.reshape((-1, 4))[:,:3]
-            pd_points = pd.DataFrame(paint_points(points), columns=['x','y','z','red','green','blue'])
+            pd_points = pd.DataFrame(paint_points(points,colors), columns=['x','y','z','red','green','blue'])
             cloud = PyntCloud(pd_points)
             cloud.plot(initial_point_size=0.000002, backend="matplotlib")
-			
+            
+            
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 
                 break
         else:
             break
-
+        
 cap.release()
 cv2.destroyAllWindows()      
  
-
-# %%
