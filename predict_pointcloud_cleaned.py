@@ -15,6 +15,7 @@ from monodepth2.utils import download_model_if_doesnt_exist
 import kitti_util
 from pyntcloud import *
 import pandas as pd
+import plotly.graph_objects as go
 
 
 STEREO_SCALE_FACTOR = 5.4
@@ -135,9 +136,36 @@ def paint_points(points, color):
 #     return cloud_msg
 
 
-def test_simple(args,frame):
-    """Function to predict depth from frame with given model
-    """
+def predict_depth(args,frame,feed_width, feed_height,device):
+
+    with torch.no_grad():
+            #preprocess
+            input_image, original_width, original_height = preprocess(frame,feed_width, feed_height)
+
+            # PREDICTION
+            input_image = input_image.to(device)
+            features = encoder(input_image)
+            outputs = depth_decoder(features)
+
+            disp = outputs[("disp", 0)]
+            disp_resized = torch.nn.functional.interpolate(
+                disp, (original_height, original_width), mode="bilinear", align_corners=False)
+            
+            # Saving colormapped depth image
+            disp_resized_np = disp_resized.squeeze().cpu().numpy()
+            __,new_depth = disp_to_depth(disp_resized_np, 0.1, 100)
+            metric_depth = STEREO_SCALE_FACTOR * new_depth
+            return metric_depth
+          
+            
+if __name__ == '__main__':
+    args = parse_args()
+    cap = cv2.VideoCapture(args.video)
+    frame_width = int(cap.get(3))
+    frame_height = int(cap.get(4))
+    first = True
+    calib_file = '{}/{}.txt'.format(args.calib_dir, 'calib')
+    calib = kitti_util.Calibration(calib_file)
     assert args.monodepth2_model_name is not None, \
         "You must specify the --model_name parameter; see README.md for an example"
 
@@ -178,41 +206,14 @@ def test_simple(args,frame):
 
     depth_decoder.to(device)
     depth_decoder.eval()
+
 		#AI Start
-    with torch.no_grad():
-            #preprocess
-            input_image, original_width, original_height = preprocess(frame,feed_width, feed_height)
-
-            # PREDICTION
-            input_image = input_image.to(device)
-            features = encoder(input_image)
-            outputs = depth_decoder(features)
-
-            disp = outputs[("disp", 0)]
-            disp_resized = torch.nn.functional.interpolate(
-                disp, (original_height, original_width), mode="bilinear", align_corners=False)
-            
-            # Saving colormapped depth image
-            disp_resized_np = disp_resized.squeeze().cpu().numpy()
-            __,new_depth = disp_to_depth(disp_resized_np, 0.1, 100)
-            metric_depth = STEREO_SCALE_FACTOR * new_depth
-            return metric_depth
-          
-            
-if __name__ == '__main__':
-    args = parse_args()
-    cap = cv2.VideoCapture(args.video)
-    frame_width = int(cap.get(3))
-    frame_height = int(cap.get(4))
-    first = True
-    calib_file = '{}/{}.txt'.format(args.calib_dir, 'calib')
-    calib = kitti_util.Calibration(calib_file)
     while(cap.isOpened()):
         ret, frame = cap.read()
         
         if ret == True:
             #Predict depth and traversable Path
-            depth_array = test_simple(args,frame)
+            depth_array = predict_depth(args,frame,feed_width, feed_height,device)
             disp_map = torchvision.transforms.ToTensor()(depth_array).unsqueeze(0).cpu().numpy()
             disp_map = (disp_map*256).astype(np.uint16)/256.
             lidar,colors = project_disp_to_points(calib, disp_map, 10, frame)
@@ -221,13 +222,23 @@ if __name__ == '__main__':
             lidar = lidar.astype(np.float32)
             #lidar.tofile('{}/{}.bin'.format(args.save_dir, predix))
             points = lidar.reshape((-1, 4))[:,:3]
+            print("Painting points")
             pd_points = pd.DataFrame(paint_points(points,colors), columns=['x','y','z','red','green','blue'])
             cloud = PyntCloud(pd_points)
             cloud.plot(initial_point_size=0.000002, backend="matplotlib")
-            
-            
+            # print("plotting")
+            # marker_data = go.Scatter3d(
+            #     x=pd_points['x'].to_numpy(),
+            #     y=pd_points['y'].to_numpy(), 
+            #     z=pd_points['z'].to_numpy(), 
+            #     marker=dict(color=[f'rgb({r}, {g}, {b})' for r,g,b in zip(pd_points['red'].to_numpy(),pd_points['green'].to_numpy(),pd_points['blue'].to_numpy())],
+            #            size=1), 
+            #     opacity=0.8, 
+            #     mode='markers'
+            # )
+            # fig=go.Figure(data=marker_data)
+            # fig.show()
             if cv2.waitKey(25) & 0xFF == ord('q'):
-                
                 break
         else:
             break
