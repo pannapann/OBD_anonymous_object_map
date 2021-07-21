@@ -1,5 +1,7 @@
 # Author: Pannapann, Goddy, Neptd, WinnamonRoll
 # python predict_pointcloud_cleaned.py --video footprints/monodepth2/gggg3.avi --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
+
+#import library
 from __future__ import absolute_import, division, print_function
 import cv2
 from PIL import Image
@@ -17,14 +19,15 @@ from pyntcloud import *
 import pandas as pd
 import plotly.graph_objects as go
 
-
+#set constant value for culculation
 STEREO_SCALE_FACTOR = 5.4
 
+#default model size
 MODEL_HEIGHT_WIDTH = {
     "kitti": (192, 640),
     "matterport": (512, 640),
     "handheld": (256, 448),
-}
+}#input argument
 def parse_args():
     parser = argparse.ArgumentParser(
         description='Complicate function to run monodepth+footprints on video.')
@@ -135,7 +138,7 @@ def paint_points(points, color):
 #     cloud_msg.data = cloud_arr.tostring()
 #     return cloud_msg
 
-
+#predict depth
 def predict_depth(args,frame,feed_width, feed_height,device):
 
     with torch.no_grad():
@@ -160,12 +163,17 @@ def predict_depth(args,frame,feed_width, feed_height,device):
             
 if __name__ == '__main__':
     args = parse_args()
+    #video input
     cap = cv2.VideoCapture(args.video)
+    #video width
     frame_width = int(cap.get(3))
+    #video height
     frame_height = int(cap.get(4))
     first = True
+    #calibration file input
     calib_file = '{}/{}.txt'.format(args.calib_dir, 'calib')
     calib = kitti_util.Calibration(calib_file)
+    #download model 
     assert args.monodepth2_model_name is not None, \
         "You must specify the --model_name parameter; see README.md for an example"
 
@@ -208,6 +216,7 @@ if __name__ == '__main__':
     depth_decoder.eval()
 
 		#AI Start
+    #run each frame of the video frame by frame
     while(cap.isOpened()):
         ret, frame = cap.read()
         
@@ -220,12 +229,13 @@ if __name__ == '__main__':
             # pad 1 in the indensity dimension
             lidar = np.concatenate([lidar, np.ones((lidar.shape[0], 1))], 1)
             lidar = lidar.astype(np.float32)
-            #lidar.tofile('{}/{}.bin'.format(args.save_dir, predix))
             points = lidar.reshape((-1, 4))[:,:3]
             print("Painting points")
             pd_points = pd.DataFrame(paint_points(points,colors), columns=['x','y','z','red','green','blue'])
+            #pointcloud (pyntcloud)
             cloud = PyntCloud(pd_points)
-            cloud.plot(initial_point_size=0.000002, backend="pyvista")
+            #pointcloud poltting
+            cloud.plot(initial_point_size=0.000002, backend="pyvista") #backend can be threejs pythreejs matplotlib and pyvista
             # print("plotting")
             # marker_data = go.Scatter3d(
             #     x=pd_points['x'].to_numpy(),
