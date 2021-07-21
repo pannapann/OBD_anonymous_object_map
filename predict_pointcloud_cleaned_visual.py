@@ -1,5 +1,5 @@
 # Author: Pannapann, Goddy, Neptd, WinnamonRoll
-# python predict_pointcloud_cleaned.py --video footprints/monodepth2/gggg3.avi --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
+# python predict_pointcloud_cleaned_visual.py --video footprints/monodepth2/gggg3.avi --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
 
 #import library
 from __future__ import absolute_import, division, print_function
@@ -18,7 +18,8 @@ import kitti_util
 from pyntcloud import *
 import pandas as pd
 import plotly.graph_objects as go
-
+import open3d as o3d
+import time
 #set constant value for culculation
 STEREO_SCALE_FACTOR = 5.4
 
@@ -214,7 +215,8 @@ if __name__ == '__main__':
 
     depth_decoder.to(device)
     depth_decoder.eval()
-
+    count = -1
+  
 		#AI Start
     #run each frame of the video frame by frame
     while(cap.isOpened()):
@@ -233,18 +235,25 @@ if __name__ == '__main__':
             print("Painting points")
             pd_points = pd.DataFrame(paint_points(points,colors), columns=['x','y','z','red','green','blue'])
             #pointcloud (pyntcloud)
+            count = count + 1 
+            print(count)
+            print(count)
             cloud = PyntCloud(pd_points)
-
-
-
-            voxelgrid_id = cloud.add_structure("voxelgrid", n_x=256, n_y=256, n_z=256)
-            new_cloud = cloud.get_sample("voxelgrid_nearest", voxelgrid_id=voxelgrid_id, as_PyntCloud=True)
-            new_cloud.plot(initial_point_size=0.000002, backend="pyvista") #backend can be threejs pythreejs matplotlib and pyvista
-
-
-
+            if os.path.exists('pointcloud_visual/out_file.npz'):
+                cloud.to_file("pointcloud_visual/out_file_{}.npz".format(int(count)))
+            else:
+                cloud.to_file("pointcloud_visual/out_file.npz")
+            
+            #cloud.to_file("out_file.npz")
+            #converted_triangle_mesh = cloud.to_instance("open3d", mesh=True)
+            #pcd = o3d.io.read_point_cloud(converted_triangle_mesh)
+            #o3d.visualization.draw_geometries([converted_triangle_mesh],
+            #                       zoom=0.3412,
+            #                       front=[0.4257, -0.2125, -0.8795],
+            #                       lookat=[2.6172, 2.0475, 1.532],
+            #                       up=[-0.0694, -0.9768, 0.2024])
             #pointcloud poltting
-            cloud.plot(initial_point_size=0.000002, backend="pyvista") #backend can be threejs pythreejs matplotlib and pyvista
+            #cloud.plot(initial_point_size=0.000002, backend="pyvista") #backend can be threejs pythreejs matplotlib and pyvista
 
 
             # print("plotting")
@@ -267,3 +276,4 @@ if __name__ == '__main__':
         
 cap.release()
 cv2.destroyAllWindows()      
+
