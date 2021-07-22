@@ -28,7 +28,7 @@ python predict_bounded_result.py --video <video_path> --monodepth2_model_name HR
 ```
 
 <p align="center">
-  <img src="predict_bounded_result.gif" alt="Example prediction output" width="1280" />
+  <img src="asset/predict_bounded_result.gif" alt="Example prediction output" width="1280" />
 </p>
 
 ### 2. Pseudo Lidar
