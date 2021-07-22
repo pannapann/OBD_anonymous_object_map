@@ -17,7 +17,7 @@ pip install -r requirements.txt
 
 After that install pytorch with cuda from https://pytorch.org/
 
-Then replace the pyntcloud library file, pyvista_backend.py in the downloaded library to the file given in this repo with the same name.
+Then replace the pyntcloud library file, pyvista_backend.py in the downloaded library to the file given in this repo (/asset) with the same name.
 
 ## Usage
 
