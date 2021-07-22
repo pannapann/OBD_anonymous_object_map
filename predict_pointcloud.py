@@ -1,5 +1,5 @@
 # Author: Pannapann, Goddy, Neptd, WinnamonRoll
-# python predict_pointcloud_cleaned.py --video footprints/monodepth2/gggg3.avi --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
+# python predict_pointcloud.py --video footprints/monodepth2/gggg3.avi --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
 
 #import library
 from __future__ import absolute_import, division, print_function

@@ -1,12 +1,10 @@
 # Author: Pannapann, Goddy, Neptd, WinnamonRoll
-# python predict_HRbounded.py --video footprints/monodepth2/gggg3.avi --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
+# python predict_bounded.py --video footprints/monodepth2/gggg3.avi --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
 from __future__ import absolute_import, division, print_function
 import cv2
 from PIL import Image
 import matplotlib.pyplot as plt
 import os
-import sys
-import glob
 import argparse
 import numpy as np
 import PIL.Image as pil
@@ -17,12 +15,11 @@ from footprints.utils import sigmoid_to_depth, download_model_if_doesnt_exist, p
 from footprints.utils import download_model_if_doesnt_exist as f_model_load
 import torch
 import torchvision
-from torchvision import transforms, datasets
+from torchvision import transforms
 import monodepth2.networks as networks
 from monodepth2.layers import disp_to_depth
 from monodepth2.utils import download_model_if_doesnt_exist
-from monodepth2.evaluate_depth import STEREO_SCALE_FACTOR
-
+STEREO_SCALE_FACTOR = 5.4
 MODEL_HEIGHT_WIDTH = {
     "kitti": (192, 640),
     "matterport": (512, 640),
