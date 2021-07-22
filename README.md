@@ -42,7 +42,7 @@ python predict_pointcloud.py --video <video_path> --monodepth2_model_name HR_Dep
   <img src="asset/pointcloud_demo.gif" alt="Example pointcloud output" width="1280" />
 </p>
 
-[Full Pseudo Lidar video link](hhttps://www.youtube.com/watch?v=-W8eXJR-gM4)
+[Full Pseudo Lidar video link](https://www.youtube.com/watch?v=-W8eXJR-gM4)
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
