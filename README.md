@@ -12,7 +12,7 @@ conda create --name <envname> --file requirements.txt
 Then install pypi dependent library from pipreqs.txt after activating the created environment
 
 ```bash
-pip install -r requirements.txt
+pip install -r pipreqs.txt
 ```
 
 After that install pytorch with cuda from https://pytorch.org/
