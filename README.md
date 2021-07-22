@@ -3,7 +3,7 @@
 Anonymous object detection with depth detection with pseudolidar pointcloud from a single image
 
 <p align="center">
-  <img src="assets/outputf" alt="Example output" width="600" />
+  <img src="assets/output.gif" alt="Example output" width="600" />
 </p>
 
 
