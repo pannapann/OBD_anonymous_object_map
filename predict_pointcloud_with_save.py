@@ -1,5 +1,5 @@
 # Author: Pannapann, Goddy, Neptd, WinnamonRoll
-# python predict_pointcloud_cleaned.py --video footprints/monodepth2/gggg3.avi --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
+# python predict_pointcloud_with_save.py --video footprints/monodepth2/gggg3.avi --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
 
 #import library
 from __future__ import absolute_import, division, print_function
@@ -18,7 +18,7 @@ import kitti_util
 from pyntcloud import *
 import pandas as pd
 import plotly.graph_objects as go
-import time
+import open3d as o3d
 #set constant value for culculation
 STEREO_SCALE_FACTOR = 5.4
 
@@ -111,29 +111,6 @@ def paint_points(points, color):
     new_pts[:, 3:] = new_pts[:, 3:] + color
     return new_pts
 
-# def array_to_pointcloud2(cloud_arr, stamp=None, frame_id=None):
-#         '''Converts a numpy record array to a sensor_msgs.msg.PointCloud2.
-#             00135     '''
-#          # make it 2d (even if height will be 1)
-#     cloud_arr = np.atleast_2d(cloud_arr)
-    
-#     cloud_msg = PointCloud2()
-    
-#     if stamp is not None:
-#         cloud_msg.header.stamp = stamp
-#     if frame_id is not None:
-#         cloud_msg.header.frame_id = frame_id
-#     cloud_msg.height = cloud_arr.shape[0]
-#     cloud_msg.width = cloud_arr.shape[1]
-#     cloud_msg.fields = dtype_to_fields(cloud_arr.dtype)
-#     cloud_msg.is_bigendian = False # assumption
-#     cloud_msg.point_step = cloud_arr.dtype.itemsize
-#     cloud_msg.row_step = cloud_msg.point_step*cloud_arr.shape[1]
-#     cloud_msg.is_dense = all([np.isfinite(cloud_arr[fname]).all() for fname in cloud_arr.dtype.names])
-#     cloud_msg.data = cloud_arr.tostring()
-#     return cloud_msg
-
-#predict depth
 def predict_depth(args,frame,feed_width, feed_height,device):
 
     with torch.no_grad():
@@ -209,14 +186,14 @@ if __name__ == '__main__':
 
     depth_decoder.to(device)
     depth_decoder.eval()
-
+    count = -1
+  
 		#AI Start
     #run each frame of the video frame by frame
     while(cap.isOpened()):
         ret, frame = cap.read()
         
         if ret == True:
-            t0 = time.time()
             #Predict depth and traversable Path
             depth_array = predict_depth(args,frame,feed_width, feed_height,device)
             disp_map = torchvision.transforms.ToTensor()(depth_array).unsqueeze(0).cpu().numpy()
@@ -226,25 +203,17 @@ if __name__ == '__main__':
             lidar = np.concatenate([lidar, np.ones((lidar.shape[0], 1))], 1)
             lidar = lidar.astype(np.float32)
             points = lidar.reshape((-1, 4))[:,:3]
-            #print("Painting points")
+            print("Painting points")
             pd_points = pd.DataFrame(paint_points(points,colors), columns=['x','y','z','red','green','blue'])
             #pointcloud (pyntcloud)
+            count = count + 1 
             cloud = PyntCloud(pd_points)
-            t1 = time.time()
-            total_no_plot = t1-t0
-            print("total_no_plot = ", total_no_plot)
-
-            #point cloud points selector
-            # voxelgrid_id = cloud.add_structure("voxelgrid", n_x=32, n_y=32, n_z=32)
-            # new_cloud = cloud.get_sample("voxelgrid_nearest", voxelgrid_id=voxelgrid_id, as_PyntCloud=True)
-            # new_cloud.plot(initial_point_size=0.000002, backend="pyvista") #backend can be threejs pythreejs matplotlib and pyvista
-
-
-            #pointcloud poltting
-            cloud.plot(initial_point_size=0.000002, backend="pyvista") #backend can be threejs pythreejs matplotlib and pyvista
-            t2 = time.time()
-            total_plot = t2-t1
-            print("total_plot = " , total_plot)
+            # can save as npz or ply file
+            if os.path.exists('pointcloud_visual/out_file.npz'):
+                cloud.to_file("pointcloud_visual/out_file_{}.npz".format(int(count)))
+            else:
+                cloud.to_file("pointcloud_visual/out_file.npz")
+            
             if cv2.waitKey(25) & 0xFF == ord('q'):
                 break
         else:
@@ -252,3 +221,4 @@ if __name__ == '__main__':
         
 cap.release()
 cv2.destroyAllWindows()      
+
