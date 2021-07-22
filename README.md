@@ -2,11 +2,9 @@
 
 Anonymous object detection with depth detection with pseudolidar pointcloud from a single image
 
-<video>
-  <source src="assets/output.mp4" type="video/mp4">
-  <source src="movie.ogg" type="video/ogg">
-  Your browser does not support the video tag.
-</video>
+<p align="center">
+  <img src="assets/outputf" alt="Example output" width="600" />
+</p>
 
 
 
