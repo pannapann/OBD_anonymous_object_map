@@ -31,6 +31,7 @@ python predict_bounded_result.py --video <video_path> --monodepth2_model_name HR
   <img src="asset/predict_bounded_result.gif" alt="Example prediction output" width="1280" />
 </p>
 
+[Full Anonymous object detection video link](https://www.youtube.com/watch?v=zVKHdSpBkBE)
 ### 2. Pseudo Lidar
 
 ```bash
@@ -41,6 +42,7 @@ python predict_pointcloud.py --video <video_path> --monodepth2_model_name HR_Dep
   <img src="asset/pointcloud_demo.gif" alt="Example pointcloud output" width="1280" />
 </p>
 
+[Full Pseudo Lidar video link](hhttps://www.youtube.com/watch?v=-W8eXJR-gM4)
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
