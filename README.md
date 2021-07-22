@@ -3,7 +3,7 @@
 Anonymous object detection with depth detection with pseudolidar pointcloud from a single image
 
 ## Installation
-First create conda environment from requirements.txt
+First create conda environment from requirements.txt (Python 3.6.6 is our test env)
 
 ```bash
 conda create --name <envname> --file requirements.txt
