@@ -135,46 +135,6 @@ def preprocess(frame,feed_width, feed_height):
 def test_simple(args,frame):
     """Function to predict depth from frame with given model
     """
-    assert args.monodepth2_model_name is not None, \
-        "You must specify the --model_name parameter; see README.md for an example"
-
-    if torch.cuda.is_available() and not args.no_cuda:
-        device = torch.device("cuda")
-    else:
-        device = torch.device("cpu")
-
-    if args.pred_metric_depth and "stereo" not in args.monodepth2_model_name:
-        print("Warning: The --pred_metric_depth flag only makes sense for stereo-trained KITTI "
-              "models. For mono-trained models, output depths will not in metric space.")
-
-    download_model_if_doesnt_exist(args.monodepth2_model_name)
-    model_path = os.path.join("models", args.monodepth2_model_name)
-    print("-> Loading model from ", model_path)
-    encoder_path = os.path.join(model_path, "encoder.pth")
-    depth_decoder_path = os.path.join(model_path, "depth.pth")
-
-    # LOADING PRETRAINED MODEL
-    print("   Loading pretrained encoder")
-    encoder = networks.ResnetEncoder(18, False)
-    loaded_dict_enc = torch.load(encoder_path, map_location=device)
-
-    # extract the height and width of image that this model was trained with
-    feed_height = loaded_dict_enc['height']
-    feed_width = loaded_dict_enc['width']
-    filtered_dict_enc = {k: v for k, v in loaded_dict_enc.items() if k in encoder.state_dict()}
-    encoder.load_state_dict(filtered_dict_enc,strict=False)
-    encoder.to(device)
-    encoder.eval()
-
-    print("Loading pretrained decoder")
-    depth_decoder = networks.HRDepthDecoder(
-        num_ch_enc=encoder.num_ch_enc, scales=range(4))
-
-    loaded_dict = torch.load(depth_decoder_path, map_location=device)
-    depth_decoder.load_state_dict(loaded_dict)
-
-    depth_decoder.to(device)
-    depth_decoder.eval()
 		#AI Start
     with torch.no_grad():
             #preprocess
@@ -225,6 +185,46 @@ if __name__ == '__main__':
     frame_width = int(cap.get(3))
     frame_height = int(cap.get(4))
     first = True
+    assert args.monodepth2_model_name is not None, \
+        "You must specify the --model_name parameter; see README.md for an example"
+
+    if torch.cuda.is_available() and not args.no_cuda:
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+
+    if args.pred_metric_depth and "stereo" not in args.monodepth2_model_name:
+        print("Warning: The --pred_metric_depth flag only makes sense for stereo-trained KITTI "
+              "models. For mono-trained models, output depths will not in metric space.")
+
+    download_model_if_doesnt_exist(args.monodepth2_model_name)
+    model_path = os.path.join("models", args.monodepth2_model_name)
+    print("-> Loading model from ", model_path)
+    encoder_path = os.path.join(model_path, "encoder.pth")
+    depth_decoder_path = os.path.join(model_path, "depth.pth")
+
+    # LOADING PRETRAINED MODEL
+    print("   Loading pretrained encoder")
+    encoder = networks.ResnetEncoder(18, False)
+    loaded_dict_enc = torch.load(encoder_path, map_location=device)
+
+    # extract the height and width of image that this model was trained with
+    feed_height = loaded_dict_enc['height']
+    feed_width = loaded_dict_enc['width']
+    filtered_dict_enc = {k: v for k, v in loaded_dict_enc.items() if k in encoder.state_dict()}
+    encoder.load_state_dict(filtered_dict_enc,strict=False)
+    encoder.to(device)
+    encoder.eval()
+
+    print("Loading pretrained decoder")
+    depth_decoder = networks.HRDepthDecoder(
+        num_ch_enc=encoder.num_ch_enc, scales=range(4))
+
+    loaded_dict = torch.load(depth_decoder_path, map_location=device)
+    depth_decoder.load_state_dict(loaded_dict)
+
+    depth_decoder.to(device)
+    depth_decoder.eval()
 	
     while(cap.isOpened()):
         ret, frame = cap.read()
@@ -236,7 +236,7 @@ if __name__ == '__main__':
             hidden_ground,depth_colourmap = inference_manager.predict_hidden_depth(frame)
             depth_image,depth_array,original_metric_depth = test_simple(args,frame)
             test = torchvision.transforms.ToTensor()(depth_array).unsqueeze(0).cpu().numpy()
-            np.save("depthNumpy",test)
+            
 			
             #Apply Hidden ground to predicted frame
             depth_array = depth_array[240:540:]
@@ -258,7 +258,7 @@ if __name__ == '__main__':
             for c in contours:
                 rect = cv2.boundingRect(c)
                 if rect[2]*rect[3] < 1000 or rect[2]*rect[3] > 0.5*1280*300 : continue
-                print(cv2.contourArea(c))
+                #print(cv2.contourArea(c))
                 x,y,w,h = rect
                 cv2.rectangle(original_frame,(x,y),(x+w,y+h),(0,255,0),2)
                 object_range = depth_array.min()
@@ -275,8 +275,8 @@ if __name__ == '__main__':
             cv2.imshow("Colorized",im)
 			
             if cv2.waitKey(25) & 0xFF == ord('q'):
-                print(depth_array.shape)
-                print(test.shape)
+                #print(depth_array.shape)
+                #print(test.shape)
                 break
         else:
             break
