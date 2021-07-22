@@ -24,7 +24,7 @@ Then replace the pyntcloud library file, pyvista_backend.py in the downloaded li
 ### 1. Anonymous object detection
 
 ```bash
-python predict_HRbounded.py --video <video_path> --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
+python predict_bounded.py --video <video_path> --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
 ```
 
 <p align="center">
@@ -34,7 +34,7 @@ python predict_HRbounded.py --video <video_path> --monodepth2_model_name HR_Dept
 ### 2. Pseudo Lidar
 
 ```bash
-python predict_pointcloud_cleaned.py --video <video_path> --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
+python predict_pointcloud.py --video <video_path> --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
 ```
 
 <p align="center">
