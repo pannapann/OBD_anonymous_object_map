@@ -1,5 +1,5 @@
 # Copyright Niantic 2019. Patent Pending. All rights reserved.
-# python predict_perspect.py --video monodepth2/gggg.avi --monodepth2_model_name mono+stereo_640x192 --pred_metric_depth
+# python predict_perspect.py --video footprints/monodepth2/gggg.avi --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
 # This software is licensed under the terms of the Monodepth2 licence
 # which allows for non-commercial use only, the full terms of which are made
 # available in the LICENSE file.
@@ -161,46 +161,7 @@ def save_colormap_depthimage():
 def test_simple(args,frame):
     """Function to predict for a single image or folder of images
     """
-    assert args.monodepth2_model_name is not None, \
-        "You must specify the --model_name parameter; see README.md for an example"
-
-    if torch.cuda.is_available() and not args.no_cuda:
-        device = torch.device("cuda")
-    else:
-        device = torch.device("cpu")
-
-    if args.pred_metric_depth and "stereo" not in args.monodepth2_model_name:
-        print("Warning: The --pred_metric_depth flag only makes sense for stereo-trained KITTI "
-              "models. For mono-trained models, output depths will not in metric space.")
-
-    download_model_if_doesnt_exist(args.monodepth2_model_name)
-    model_path = os.path.join("models", args.monodepth2_model_name)
-    print("-> Loading model from ", model_path)
-    encoder_path = os.path.join(model_path, "encoder.pth")
-    depth_decoder_path = os.path.join(model_path, "depth.pth")
-
-    # LOADING PRETRAINED MODEL
-    print("   Loading pretrained encoder")
-    encoder = networks.ResnetEncoder(18, False)
-    loaded_dict_enc = torch.load(encoder_path, map_location=device)
-
-    # extract the height and width of image that this model was trained with
-    feed_height = loaded_dict_enc['height']
-    feed_width = loaded_dict_enc['width']
-    filtered_dict_enc = {k: v for k, v in loaded_dict_enc.items() if k in encoder.state_dict()}
-    encoder.load_state_dict(filtered_dict_enc)
-    encoder.to(device)
-    encoder.eval()
-
-    print("Loading pretrained decoder")
-    depth_decoder = networks.HRDepthDecoder(
-        num_ch_enc=encoder.num_ch_enc, scales=range(4))
-
-    loaded_dict = torch.load(depth_decoder_path, map_location=device)
-    depth_decoder.load_state_dict(loaded_dict)
-
-    depth_decoder.to(device)
-    depth_decoder.eval()
+    
 		#AI Start
     with torch.no_grad():
 						#preprocess
@@ -254,6 +215,46 @@ if __name__ == '__main__':
     model_name=args.footprint_model,
     use_cuda=torch.cuda.is_available() and not args.no_cuda,
     save_visualisations=not args.no_save_vis)
+    assert args.monodepth2_model_name is not None, \
+        "You must specify the --model_name parameter; see README.md for an example"
+
+    if torch.cuda.is_available() and not args.no_cuda:
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
+
+    if args.pred_metric_depth and "stereo" not in args.monodepth2_model_name:
+        print("Warning: The --pred_metric_depth flag only makes sense for stereo-trained KITTI "
+              "models. For mono-trained models, output depths will not in metric space.")
+
+    download_model_if_doesnt_exist(args.monodepth2_model_name)
+    model_path = os.path.join("models", args.monodepth2_model_name)
+    print("-> Loading model from ", model_path)
+    encoder_path = os.path.join(model_path, "encoder.pth")
+    depth_decoder_path = os.path.join(model_path, "depth.pth")
+
+    # LOADING PRETRAINED MODEL
+    print("   Loading pretrained encoder")
+    encoder = networks.ResnetEncoder(18, False)
+    loaded_dict_enc = torch.load(encoder_path, map_location=device)
+
+    # extract the height and width of image that this model was trained with
+    feed_height = loaded_dict_enc['height']
+    feed_width = loaded_dict_enc['width']
+    filtered_dict_enc = {k: v for k, v in loaded_dict_enc.items() if k in encoder.state_dict()}
+    encoder.load_state_dict(filtered_dict_enc)
+    encoder.to(device)
+    encoder.eval()
+
+    print("Loading pretrained decoder")
+    depth_decoder = networks.HRDepthDecoder(
+        num_ch_enc=encoder.num_ch_enc, scales=range(4))
+
+    loaded_dict = torch.load(depth_decoder_path, map_location=device)
+    depth_decoder.load_state_dict(loaded_dict)
+
+    depth_decoder.to(device)
+    depth_decoder.eval()
     #save_dir=args.save_dir)
     cap = cv2.VideoCapture(args.video)
 
