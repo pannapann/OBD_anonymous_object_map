@@ -60,15 +60,15 @@ Please make sure to update tests as appropriate.
 [HR-Depth](https://github.com/shawLyu/HR-Depth)
 
 
->HR-Depth: High Resolution Self-Supervised Monocular Depth Estimation
+> **HR-Depth: High Resolution Self-Supervised Monocular Depth Estimation**
 >
->Xiaoyang Lyu, Liang Liu, Mengmeng Wang, Xin Kong, Lina Liu, Yong Liu*, Xinxin Chen and Yi Yuan.
+> Xiaoyang Lyu, Liang Liu, Mengmeng Wang, Xin Kong, Lina Liu, Yong Liu*, Xinxin Chen and Yi Yuan.
 
 [Pseudo-Lidar](https://github.com/mileyan/pseudo_lidar)
 
->Pseudo-LiDAR from Visual Depth Estimation: Bridging the Gap in 3D Object Detection for Autonomous Driving
+> **Pseudo-LiDAR from Visual Depth Estimation: Bridging the Gap in 3D Object Detection for Autonomous Driving**
 >
->by Yan Wang, Wei-Lun Chao, Divyansh Garg, Bharath Hariharan, Mark Campbell and Kilian Q. Weinberger
+> Yan Wang, Wei-Lun Chao, Divyansh Garg, Bharath Hariharan, Mark Campbell and Kilian Q. Weinberger
 
 
 ## License
