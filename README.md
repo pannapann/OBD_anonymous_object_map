@@ -24,7 +24,7 @@ Then replace the pyntcloud library file, pyvista_backend.py in the downloaded li
 ### 1. Anonymous object detection
 
 ```bash
-python predict_bounded_result.py --video <video_path> --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
+python predict_bounded.py --video <video_path> --monodepth2_model_name HR_Depth_K_M_1280x384 --pred_metric_depth
 ```
 
 <p align="center">
