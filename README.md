@@ -19,6 +19,8 @@ After that install pytorch with cuda from https://pytorch.org/
 
 Then replace the pyntcloud library file, pyvista_backend.py in the downloaded library to the file given in this repo (/asset) with the same name.
 
+Or use the environment.yml provided 
+
 ## Usage
 
 ### 1. Anonymous object detection
