@@ -3,7 +3,7 @@
 Anonymous object detection with depth detection with pseudolidar pointcloud from a single image
 
 ## Installation
-First create conda environment from requirements.txt
+First create conda environment from requirements.txt (Python 3.6.6 is our test env)
 
 ```bash
 conda create --name <envname> --file requirements.txt
@@ -12,12 +12,12 @@ conda create --name <envname> --file requirements.txt
 Then install pypi dependent library from pipreqs.txt after activating the created environment
 
 ```bash
-pip install -r requirements.txt
+pip install -r pipreqs.txt
 ```
 
 After that install pytorch with cuda from https://pytorch.org/
 
-Then replace the pyntcloud library file, pyvista_backend.py in the downloaded library to the file given in this repo with the same name.
+Then replace the pyntcloud library file, pyvista_backend.py in the downloaded library to the file given in this repo (/asset) with the same name.
 
 ## Usage
 
@@ -28,9 +28,10 @@ python predict_bounded.py --video <video_path> --monodepth2_model_name HR_Depth_
 ```
 
 <p align="center">
-  <img src="predict_bounded_result.mp4" alt="Example prediction output" width="1280" />
+  <img src="asset/predict_bounded_result.gif" alt="Example prediction output" width="1280" />
 </p>
 
+[Full Anonymous object detection video link](https://www.youtube.com/watch?v=zVKHdSpBkBE)
 ### 2. Pseudo Lidar
 
 ```bash
@@ -41,6 +42,7 @@ python predict_pointcloud.py --video <video_path> --monodepth2_model_name HR_Dep
   <img src="asset/pointcloud_demo.gif" alt="Example pointcloud output" width="1280" />
 </p>
 
+[Full Pseudo Lidar video link](https://www.youtube.com/watch?v=-W8eXJR-gM4)
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
@@ -58,15 +60,15 @@ Please make sure to update tests as appropriate.
 [HR-Depth](https://github.com/shawLyu/HR-Depth)
 
 
->HR-Depth: High Resolution Self-Supervised Monocular Depth Estimation
+> **HR-Depth: High Resolution Self-Supervised Monocular Depth Estimation**
 >
->Xiaoyang Lyu, Liang Liu, Mengmeng Wang, Xin Kong, Lina Liu, Yong Liu*, Xinxin Chen and Yi Yuan.
+> Xiaoyang Lyu, Liang Liu, Mengmeng Wang, Xin Kong, Lina Liu, Yong Liu*, Xinxin Chen and Yi Yuan.
 
 [Pseudo-Lidar](https://github.com/mileyan/pseudo_lidar)
 
->Pseudo-LiDAR from Visual Depth Estimation: Bridging the Gap in 3D Object Detection for Autonomous Driving
+> **Pseudo-LiDAR from Visual Depth Estimation: Bridging the Gap in 3D Object Detection for Autonomous Driving**
 >
->by Yan Wang, Wei-Lun Chao, Divyansh Garg, Bharath Hariharan, Mark Campbell and Kilian Q. Weinberger
+> Yan Wang, Wei-Lun Chao, Divyansh Garg, Bharath Hariharan, Mark Campbell and Kilian Q. Weinberger
 
 
 ## License
